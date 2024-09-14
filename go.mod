@@ -5,7 +5,7 @@ go 1.22.0
 require (
 	github.com/swaggo/http-swagger v1.3.4
 	github.com/swaggo/swag v1.16.3
-	github.com/tinh-tinh/tinhtinh v0.0.38
+	github.com/tinh-tinh/tinhtinh v1.0.0
 )
 
 require (
