@@ -1,6 +1,8 @@
 package swagger
 
 import (
+	"reflect"
+	"time"
 	"unicode"
 )
 
@@ -33,5 +35,27 @@ func IsNil(val interface{}) bool {
 		return len(v) == 0
 	default:
 		return val == nil
+	}
+}
+
+func mappingType(val reflect.Value) string {
+	if val.Type() == reflect.TypeOf(time.Time{}) {
+		return "string"
+	}
+	switch val.Kind() {
+	case reflect.Bool:
+		return "boolean"
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return "integer"
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return "integer"
+	case reflect.Float32, reflect.Float64:
+		return "number"
+	case reflect.String:
+		return "string"
+	case reflect.Struct:
+		return "object"
+	default:
+		return ""
 	}
 }

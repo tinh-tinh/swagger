@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/tinh-tinh/tinhtinh/core"
 	"github.com/tinh-tinh/tinhtinh/utils"
@@ -151,7 +152,10 @@ func ParseDefinition(dto interface{}) *DefinitionObject {
 	ct := reflect.ValueOf(dto).Elem()
 	for i := 0; i < ct.NumField(); i++ {
 		schema := &SchemaObject{
-			Type: ct.Field(i).Kind().String(),
+			Type: mappingType(ct.Field(i)),
+		}
+		if reflect.TypeOf(ct.Field(i).Interface()) == reflect.TypeOf(time.Time{}) {
+			schema.Format = "date-time"
 		}
 
 		field := ct.Type().Field(i)
@@ -191,7 +195,7 @@ func ScanQuery(val interface{}, in core.InDto) []*ParameterObject {
 		}
 		param := &ParameterObject{
 			Name: name,
-			Type: field.Type.Name(),
+			Type: mappingType(ct.Field(i)),
 			In:   string(in),
 		}
 		validator := field.Tag.Get("validate")
