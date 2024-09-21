@@ -4,9 +4,9 @@ import (
 	"reflect"
 	"slices"
 	"strings"
-	"unicode"
 
 	"github.com/tinh-tinh/tinhtinh/core"
+	"github.com/tinh-tinh/tinhtinh/utils"
 )
 
 func (spec *SpecBuilder) ParsePaths(app *core.App) {
@@ -18,23 +18,23 @@ func (spec *SpecBuilder) ParsePaths(app *core.App) {
 
 	for _, route := range routes {
 		parseRoute := core.ParseRoute(route.Path)
-		parametes := []*ParameterObject{}
+		parameters := []*ParameterObject{}
 		dtos := route.Dtos
 		for _, dto := range dtos {
 			switch dto.In {
 			case core.InBody:
-				definitions[getNameStruct(dto.Dto)] = ParseDefinition(dto.Dto)
-				parametes = append(parametes, &ParameterObject{
-					Name: getNameStruct(dto.Dto),
+				definitions[utils.GetNameStruct(dto.Dto)] = ParseDefinition(dto.Dto)
+				parameters = append(parameters, &ParameterObject{
+					Name: utils.GetNameStruct(dto.Dto),
 					In:   string(dto.In),
 					Schema: &SchemaObject{
-						Ref: "#/definitions/" + getNameStruct(dto.Dto),
+						Ref: "#/definitions/" + utils.GetNameStruct(dto.Dto),
 					},
 				})
 			case core.InQuery:
-				parametes = append(parametes, ScanQuery(dto.Dto, dto.In)...)
+				parameters = append(parameters, ScanQuery(dto.Dto, dto.In)...)
 			case core.InPath:
-				parametes = append(parametes, ScanQuery(dto.Dto, dto.In)...)
+				parameters = append(parameters, ScanQuery(dto.Dto, dto.In)...)
 			}
 		}
 
@@ -48,7 +48,7 @@ func (spec *SpecBuilder) ParsePaths(app *core.App) {
 		res := map[string]*ResponseObject{"200": response}
 		operation := &OperationObject{
 			Tags:       []string{route.Tag},
-			Parameters: parametes,
+			Parameters: parameters,
 			Responses:  res,
 			Security:   []map[string][]string{},
 		}
@@ -146,38 +146,6 @@ func recursiveParseStandardSwagger(val interface{}) Mapper {
 	return mapper
 }
 
-func firstLetterToLower(s string) string {
-	if len(s) == 0 {
-		return s
-	}
-
-	r := []rune(s)
-	r[0] = unicode.ToLower(r[0])
-
-	return string(r)
-}
-
-func IsNil(val interface{}) bool {
-	switch v := val.(type) {
-	case string:
-		return len(v) == 0
-	case []string:
-		return len(v) == 0
-	case []*interface{}:
-		return len(v) == 0
-	case []interface{}:
-		return len(v) == 0
-	case map[string]interface{}:
-		return len(v) == 0
-	case []*SecuritySchemeObject:
-		return len(v) == 0
-	case []*ParameterObject:
-		return len(v) == 0
-	default:
-		return val == nil
-	}
-}
-
 func ParseDefinition(dto interface{}) *DefinitionObject {
 	properties := make(map[string]*SchemaObject)
 	ct := reflect.ValueOf(dto).Elem()
@@ -206,17 +174,6 @@ func ParseDefinition(dto interface{}) *DefinitionObject {
 		Type:       "object",
 		Properties: properties,
 	}
-}
-
-func getNameStruct(str interface{}) string {
-	name := ""
-	if t := reflect.TypeOf(str); t.Kind() == reflect.Ptr {
-		name = t.Elem().Name()
-	} else {
-		name = t.Name()
-	}
-
-	return firstLetterToLower(name)
 }
 
 func ScanQuery(val interface{}, in core.InDto) []*ParameterObject {
