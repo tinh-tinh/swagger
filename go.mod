@@ -1,4 +1,4 @@
-module github.com/tinh-tinh/swagge
+module github.com/tinh-tinh/swagger
 
 go 1.22.0
 
