@@ -8,4 +8,5 @@ type SignUpUser struct {
 
 type FindUser struct {
 	Name string `validate:"required,isAlpha" query:"name" example:"ac"`
+	Age  int    `validate:"required,isInt" query:"age"`
 }

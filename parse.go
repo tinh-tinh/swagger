@@ -28,7 +28,7 @@ func (spec *SpecBuilder) ParsePaths(app *core.App) {
 					Name: utils.GetNameStruct(dto.Dto),
 					In:   string(dto.In),
 					Schema: &SchemaObject{
-						Ref: "#/definitions/" + utils.GetNameStruct(dto.Dto),
+						Ref: "#/definitions/" + firstLetterToLower(utils.GetNameStruct(dto.Dto)),
 					},
 				})
 			case core.InQuery:
