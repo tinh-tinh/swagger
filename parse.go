@@ -10,6 +10,23 @@ import (
 	"github.com/tinh-tinh/tinhtinh/utils"
 )
 
+// ParsePaths parse all routes in the app and create a swagger spec.
+//
+// This method will loop through all routes in the app and parse the route
+// path, method, and dtos. It will then create a swagger spec in the
+// spec.Paths and spec.Definitions fields.
+//
+// The rules for parsing the route path are as follows:
+// - If the route path contains a path parameter, it will be replaced with
+//   {parameter_name}.
+// - If the route path contains multiple path parameters, they will be
+//   replaced with {parameter_name1}/{parameter_name2}/.../{parameter_nameN}
+//
+// The rules for parsing the dtos are as follows:
+// - If the dto is in the body, it will be replaced with the name of the
+//   dto in the definitions section.
+// - If the dto is in the query or path, it will be replaced with the name
+//   of the dto in the parameters section.
 func (spec *SpecBuilder) ParsePaths(app *core.App) {
 	// mapperDoc := app.Module.MapperDoc
 	routes := app.Module.Routers
@@ -79,6 +96,17 @@ func (spec *SpecBuilder) ParsePaths(app *core.App) {
 
 type Mapper map[string]interface{}
 
+// recursiveParseStandardSwagger takes a struct and recursively parses its fields
+// to create a swagger-style mapper. The mapper is a map[string]interface{}
+// where the keys are the field names (lowercased) and the values are the
+// field values. The rules for parsing the fields are as follows:
+//
+// - If the field is a pointer, it is recursively parsed.
+// - If the field is a map, its values are recursively parsed.
+// - If the field is a slice, its elements are recursively parsed.
+// - If the field is a primitive type, its value is used as is.
+//
+// The function returns a Mapper or nil if the input is nil.
 func recursiveParseStandardSwagger(val interface{}) Mapper {
 	mapper := make(Mapper)
 
@@ -147,6 +175,15 @@ func recursiveParseStandardSwagger(val interface{}) Mapper {
 	return mapper
 }
 
+// ParseDefinition takes a struct and recursively parses its fields
+// to create a swagger-style DefinitionObject. The rules for parsing the fields are as follows:
+//
+// - If the field is a pointer, it is recursively parsed.
+// - If the field is a map, its values are recursively parsed.
+// - If the field is a slice, its elements are recursively parsed.
+// - If the field is a primitive type, its value is used as is.
+//
+// The function returns a DefinitionObject or nil if the input is nil.
 func ParseDefinition(dto interface{}) *DefinitionObject {
 	properties := make(map[string]*SchemaObject)
 	ct := reflect.ValueOf(dto).Elem()
@@ -180,6 +217,16 @@ func ParseDefinition(dto interface{}) *DefinitionObject {
 	}
 }
 
+// ScanQuery takes a struct and recursively parses its fields to create a swagger-style mapper.
+// The mapper is a slice of ParameterObject where the keys are the field names (lowercased) and the values are the
+// field values. The rules for parsing the fields are as follows:
+//
+// - If the field is a pointer, it is recursively parsed.
+// - If the field is a map, its values are recursively parsed.
+// - If the field is a slice, its elements are recursively parsed.
+// - If the field is a primitive type, its value is used as is.
+//
+// The function returns a slice of ParameterObject or nil if the input is nil.
 func ScanQuery(val interface{}, in core.InDto) []*ParameterObject {
 	ct := reflect.ValueOf(val).Elem()
 

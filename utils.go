@@ -6,6 +6,8 @@ import (
 	"unicode"
 )
 
+// firstLetterToLower changes the first letter of a string to lowercase.
+// It returns the string unchanged if it is empty.
 func firstLetterToLower(s string) string {
 	if len(s) == 0 {
 		return s
@@ -17,6 +19,9 @@ func firstLetterToLower(s string) string {
 	return string(r)
 }
 
+// IsNil checks if a given value is nil or empty.
+// The function returns true for empty strings, slices, maps, and pointers.
+// For other types, it returns whether the value is nil or not.
 func IsNil(val interface{}) bool {
 	switch v := val.(type) {
 	case string:
@@ -38,6 +43,9 @@ func IsNil(val interface{}) bool {
 	}
 }
 
+// mappingType takes a reflect.Value and returns a string describing its type in
+// OpenAPI mapping terms. The returned string is one of "boolean", "integer",
+// "number", "string", or "object".
 func mappingType(val reflect.Value) string {
 	if val.Type() == reflect.TypeOf(time.Time{}) {
 		return "string"
