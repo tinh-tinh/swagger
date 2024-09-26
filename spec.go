@@ -66,10 +66,28 @@ func (spec *SpecBuilder) AddSecurity(security ...*SecuritySchemeObject) *SpecBui
 	return spec
 }
 
+// Build builds the swagger spec.
+//
+// It takes the SpecBuilder instance and returns the same instance
+// with the swagger spec built.
 func (spec *SpecBuilder) Build() *SpecBuilder {
 	return spec
 }
 
+// SetUp sets up the swagger UI and API endpoint.
+//
+// It takes a prefix to mount the swagger UI and API endpoint, an app
+// instance, and a SpecBuilder instance. It will parse the app's routes
+// using the SpecBuilder and generate the swagger spec. It will then
+// register a swagger handler with the app. The swagger handler will
+// serve the swagger UI and API endpoint.
+//
+// The swagger UI will be available at the path <prefix>/doc.json. The
+// swagger API endpoint will be available at the path <prefix>/doc.json.
+//
+// For example, if you call SetUp("/swagger", app, spec), you can access
+// the swagger UI at http://localhost:8080/swagger/doc.json and the
+// swagger API endpoint at http://localhost:8080/swagger/doc.json.
 func SetUp(path string, app *core.App, spec *SpecBuilder) {
 	spec.ParsePaths(app)
 	mapper := recursiveParseStandardSwagger(spec)
