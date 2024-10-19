@@ -3,12 +3,24 @@ package post
 import (
 	"github.com/tinh-tinh/swagger"
 	"github.com/tinh-tinh/tinhtinh/core"
+	"github.com/tinh-tinh/tinhtinh/middleware/storage"
 )
 
-func controller(module *core.DynamicModule) *core.DynamicController {
-	ctrl := module.NewController("Posts").Metadata(swagger.Tag("Post")).Registry()
+type UploadFile struct {
+	File storage.File `example:"file"`
+}
 
-	ctrl.Post("/", func(ctx core.Ctx) error {
+func controller(module *core.DynamicModule) *core.DynamicController {
+	ctrl := module.NewController("Posts").Metadata(swagger.ApiTag("Post")).Registry()
+
+	ctrl.Metadata(
+		swagger.ApiConsumer("multipart/form-data"),
+		swagger.ApiFile(swagger.FileOptions{
+			Name:        "file",
+			Description: "file upload",
+			Required:    true,
+		}),
+	).Post("/", func(ctx core.Ctx) error {
 		return ctx.JSON(core.Map{"data": "ok"})
 	})
 

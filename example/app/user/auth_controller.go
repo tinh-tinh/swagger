@@ -7,7 +7,7 @@ import (
 )
 
 func authController(module *core.DynamicModule) *core.DynamicController {
-	authCtrl := module.NewController("Auth").Metadata(swagger.Tag("Auth")).Registry()
+	authCtrl := module.NewController("Auth").Metadata(swagger.ApiTag("Auth")).Registry()
 
 	authCtrl.Pipe(
 		core.Body(&dto.SignUpUser{}),
