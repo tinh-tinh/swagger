@@ -19,7 +19,6 @@ type Config struct {
 
 func NewModule() *core.DynamicModule {
 	appModule := core.NewModule(core.NewModuleOptions{
-		Global: true,
 		Imports: []core.Module{
 			user.Module,
 			post.Module,

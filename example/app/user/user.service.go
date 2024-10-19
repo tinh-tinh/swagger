@@ -11,7 +11,10 @@ type CrudService struct {
 const USER_SERVICE core.Provide = "UserService"
 
 func service(module *core.DynamicModule) *core.DynamicProvider {
-	userSv := module.NewProvider(CrudService{}, USER_SERVICE)
+	userSv := module.NewProvider(core.ProviderOptions{
+		Name:  USER_SERVICE,
+		Value: &CrudService{},
+	})
 
 	return userSv
 }

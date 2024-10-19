@@ -35,7 +35,7 @@ func (spec *SpecBuilder) ParsePaths(app *core.App) {
 	definitions := make(map[string]*DefinitionObject)
 
 	for _, route := range routes {
-		parseRoute := core.ParseRoute(route.Path)
+		parseRoute := core.ParseRoute(route.Method + " " + route.Name + route.Path)
 		parameters := []*ParameterObject{}
 		dtos := route.Dtos
 		for _, dto := range dtos {
@@ -65,19 +65,37 @@ func (spec *SpecBuilder) ParsePaths(app *core.App) {
 		}
 		res := map[string]*ResponseObject{"200": response}
 		operation := &OperationObject{
-			Tags:       []string{route.Tag},
+			Tags:       []string{},
 			Parameters: parameters,
 			Responses:  res,
 			Security:   []map[string][]string{},
 		}
 
-		if len(route.Security) > 0 {
-			security := map[string][]string{}
-			for _, s := range route.Security {
-				security[s] = []string{}
+		tagIndex := slices.IndexFunc(route.Metadata, func(v *core.Metadata) bool { return v.Key == TAG })
+		if tagIndex != -1 {
+			tags, ok := route.Metadata[tagIndex].Value.([]string)
+			if ok {
+				operation.Tags = tags
 			}
-			operation.Security = append(operation.Security, security)
 		}
+		secureIndex := slices.IndexFunc(route.Metadata, func(v *core.Metadata) bool { return v.Key == SECURITY })
+		if secureIndex != -1 {
+			securities, ok := route.Metadata[secureIndex].Value.([]string)
+			if ok {
+				security := map[string][]string{}
+				for _, s := range securities {
+					security[s] = []string{}
+				}
+				operation.Security = append(operation.Security, security)
+			}
+		}
+		// if len(route.Security) > 0 {
+		// 	security := map[string][]string{}
+		// 	for _, s := range route.Security {
+		// 		security[s] = []string{}
+		// 	}
+		// 	operation.Security = append(operation.Security, security)
+		// }
 		switch parseRoute.Method {
 		case "GET":
 			itemObject.Get = operation

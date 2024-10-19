@@ -7,7 +7,8 @@ import (
 )
 
 func main() {
-	server := core.CreateFactory(app.NewModule, "api")
+	server := core.CreateFactory(app.NewModule)
+	server.SetGlobalPrefix("api")
 
 	document := swagger.NewSpecBuilder()
 	document.SetHost("localhost:3000").SetBasePath("/api").AddSecurity(&swagger.SecuritySchemeObject{
