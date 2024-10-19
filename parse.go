@@ -17,16 +17,16 @@ import (
 // spec.Paths and spec.Definitions fields.
 //
 // The rules for parsing the route path are as follows:
-// - If the route path contains a path parameter, it will be replaced with
-//   {parameter_name}.
-// - If the route path contains multiple path parameters, they will be
-//   replaced with {parameter_name1}/{parameter_name2}/.../{parameter_nameN}
+//   - If the route path contains a path parameter, it will be replaced with
+//     {parameter_name}.
+//   - If the route path contains multiple path parameters, they will be
+//     replaced with {parameter_name1}/{parameter_name2}/.../{parameter_nameN}
 //
 // The rules for parsing the dtos are as follows:
-// - If the dto is in the body, it will be replaced with the name of the
-//   dto in the definitions section.
-// - If the dto is in the query or path, it will be replaced with the name
-//   of the dto in the parameters section.
+//   - If the dto is in the body, it will be replaced with the name of the
+//     dto in the definitions section.
+//   - If the dto is in the query or path, it will be replaced with the name
+//     of the dto in the parameters section.
 func (spec *SpecBuilder) ParsePaths(app *core.App) {
 	// mapperDoc := app.Module.MapperDoc
 	routes := app.Module.Routers
@@ -34,10 +34,12 @@ func (spec *SpecBuilder) ParsePaths(app *core.App) {
 	pathObject := make(PathObject)
 	definitions := make(map[string]*DefinitionObject)
 
+	// Parse routes
 	for _, route := range routes {
 		parseRoute := core.ParseRoute(route.Method + " " + route.Name + route.Path)
 		parameters := []*ParameterObject{}
 		dtos := route.Dtos
+		// Parse dto from pipe
 		for _, dto := range dtos {
 			switch dto.In {
 			case core.InBody:
@@ -56,6 +58,24 @@ func (spec *SpecBuilder) ParsePaths(app *core.App) {
 			}
 		}
 
+		fileIdx := slices.IndexFunc(route.Metadata, func(v *core.Metadata) bool {
+			return v.Key == FILE
+		})
+		if fileIdx != -1 {
+			files, ok := route.Metadata[fileIdx].Value.([]FileOptions)
+			if ok {
+				for _, file := range files {
+					parameters = append(parameters, &ParameterObject{
+						Name:        file.Name,
+						In:          "formData",
+						Type:        "file",
+						Required:    file.Required,
+						Description: file.Description,
+					})
+				}
+			}
+		}
+
 		if pathObject[parseRoute.Path] == nil {
 			pathObject[parseRoute.Path] = &PathItemObject{}
 		}
@@ -66,11 +86,13 @@ func (spec *SpecBuilder) ParsePaths(app *core.App) {
 		res := map[string]*ResponseObject{"200": response}
 		operation := &OperationObject{
 			Tags:       []string{},
+			Consumes:   []string{},
 			Parameters: parameters,
 			Responses:  res,
 			Security:   []map[string][]string{},
 		}
 
+		// Api Tag
 		tagIndex := slices.IndexFunc(route.Metadata, func(v *core.Metadata) bool { return v.Key == TAG })
 		if tagIndex != -1 {
 			tags, ok := route.Metadata[tagIndex].Value.([]string)
@@ -78,6 +100,8 @@ func (spec *SpecBuilder) ParsePaths(app *core.App) {
 				operation.Tags = tags
 			}
 		}
+
+		// Api Security
 		secureIndex := slices.IndexFunc(route.Metadata, func(v *core.Metadata) bool { return v.Key == SECURITY })
 		if secureIndex != -1 {
 			securities, ok := route.Metadata[secureIndex].Value.([]string)
@@ -89,13 +113,17 @@ func (spec *SpecBuilder) ParsePaths(app *core.App) {
 				operation.Security = append(operation.Security, security)
 			}
 		}
-		// if len(route.Security) > 0 {
-		// 	security := map[string][]string{}
-		// 	for _, s := range route.Security {
-		// 		security[s] = []string{}
-		// 	}
-		// 	operation.Security = append(operation.Security, security)
-		// }
+
+		// Api Consumer
+		consumerIndex := slices.IndexFunc(route.Metadata, func(v *core.Metadata) bool { return v.Key == CONSUMER })
+		if consumerIndex != -1 {
+			consumers, ok := route.Metadata[consumerIndex].Value.([]string)
+			if ok {
+				operation.Consumes = consumers
+			}
+		}
+
+		// Matching method
 		switch parseRoute.Method {
 		case "GET":
 			itemObject.Get = operation

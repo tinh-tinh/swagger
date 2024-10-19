@@ -7,9 +7,9 @@ import (
 )
 
 func managerController(module *core.DynamicModule) *core.DynamicController {
-	ctrl := module.NewController("Users").Version("1").Guard().Metadata(
-		swagger.Tag("User"),
-		swagger.Security("authorization"),
+	ctrl := module.NewController("Users").Version("1").Metadata(
+		swagger.ApiTag("User"),
+		swagger.ApiSecurity("authorization"),
 	).Registry()
 
 	ctrl.Pipe(
