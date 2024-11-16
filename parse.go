@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/tinh-tinh/tinhtinh/core"
-	"github.com/tinh-tinh/tinhtinh/utils"
 )
 
 // ParsePaths parse all routes in the app and create a swagger spec.
@@ -43,12 +42,12 @@ func (spec *SpecBuilder) ParsePaths(app *core.App) {
 		for _, dto := range dtos {
 			switch dto.In {
 			case core.InBody:
-				definitions[utils.GetNameStruct(dto.Dto)] = ParseDefinition(dto.Dto)
+				definitions[GetNameStruct(dto.Dto)] = ParseDefinition(dto.Dto)
 				parameters = append(parameters, &ParameterObject{
-					Name: utils.GetNameStruct(dto.Dto),
+					Name: GetNameStruct(dto.Dto),
 					In:   string(dto.In),
 					Schema: &SchemaObject{
-						Ref: "#/definitions/" + firstLetterToLower(utils.GetNameStruct(dto.Dto)),
+						Ref: "#/definitions/" + firstLetterToLower(GetNameStruct(dto.Dto)),
 					},
 				})
 			case core.InQuery:

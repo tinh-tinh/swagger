@@ -5,8 +5,8 @@ go 1.22.0
 require (
 	github.com/stretchr/testify v1.9.0
 	github.com/swaggo/http-swagger v1.3.4
-	github.com/swaggo/swag v1.16.3
-	github.com/tinh-tinh/tinhtinh v1.2.0
+	github.com/swaggo/swag v1.16.4
+	github.com/tinh-tinh/tinhtinh v1.2.4
 )
 
 require (
@@ -20,7 +20,7 @@ require (
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/swaggo/files v1.0.1 // indirect
-	golang.org/x/net v0.28.0 // indirect
-	golang.org/x/tools v0.24.0 // indirect
+	golang.org/x/net v0.31.0 // indirect
+	golang.org/x/tools v0.27.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
