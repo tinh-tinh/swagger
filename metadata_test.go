@@ -1,13 +1,14 @@
-package main
+package swagger_test
 
 import (
+	"testing"
+
 	"github.com/tinh-tinh/swagger"
-	"github.com/tinh-tinh/swagger/example/app"
 	"github.com/tinh-tinh/tinhtinh/core"
 )
 
-func main() {
-	server := core.CreateFactory(app.NewModule)
+func Test_Tag(t *testing.T) {
+	server := core.CreateFactory(AppModule)
 	server.SetGlobalPrefix("api")
 
 	document := swagger.NewSpecBuilder()
@@ -18,5 +19,4 @@ func main() {
 	})
 
 	swagger.SetUp("docs", server, document)
-	server.Listen(3000)
 }
