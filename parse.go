@@ -35,25 +35,27 @@ func (spec *SpecBuilder) ParsePaths(app *core.App) {
 
 	// Parse routes
 	for _, route := range routes {
-		parseRoute := core.ParseRoute(route.Method + " " + route.Name + route.Path)
+		parseRoute := core.ParseRoute(route.Method + " " + route.Path)
+		parseRoute.SetPrefix(route.Name)
 		parameters := []*ParameterObject{}
 		dtos := route.Dtos
 		// Parse dto from pipe
 		for _, dto := range dtos {
-			switch dto.In {
+			val := dto.GetValue()
+			switch dto.GetLocation() {
 			case core.InBody:
-				definitions[GetNameStruct(dto.Dto)] = ParseDefinition(dto.Dto)
+				definitions[GetNameStruct(val)] = ParseDefinition(val)
 				parameters = append(parameters, &ParameterObject{
-					Name: GetNameStruct(dto.Dto),
-					In:   string(dto.In),
+					Name: GetNameStruct(val),
+					In:   string(dto.GetLocation()),
 					Schema: &SchemaObject{
-						Ref: "#/definitions/" + firstLetterToLower(GetNameStruct(dto.Dto)),
+						Ref: "#/definitions/" + firstLetterToLower(GetNameStruct(val)),
 					},
 				})
 			case core.InQuery:
-				parameters = append(parameters, ScanQuery(dto.Dto, dto.In)...)
+				parameters = append(parameters, ScanQuery(val, dto.GetLocation())...)
 			case core.InPath:
-				parameters = append(parameters, ScanQuery(dto.Dto, dto.In)...)
+				parameters = append(parameters, ScanQuery(val, dto.GetLocation())...)
 			}
 		}
 
@@ -141,7 +143,7 @@ func (spec *SpecBuilder) ParsePaths(app *core.App) {
 
 type Mapper map[string]interface{}
 
-// recursiveParseStandardSwagger takes a struct and recursively parses its fields
+// RecursiveParseStandardSwagger takes a struct and recursively parses its fields
 // to create a swagger-style mapper. The mapper is a map[string]interface{}
 // where the keys are the field names (lowercased) and the values are the
 // field values. The rules for parsing the fields are as follows:
@@ -152,7 +154,7 @@ type Mapper map[string]interface{}
 // - If the field is a primitive type, its value is used as is.
 //
 // The function returns a Mapper or nil if the input is nil.
-func recursiveParseStandardSwagger(val interface{}) Mapper {
+func RecursiveParseStandardSwagger(val interface{}) Mapper {
 	mapper := make(Mapper)
 
 	if reflect.ValueOf(val).IsNil() {
@@ -169,7 +171,7 @@ func recursiveParseStandardSwagger(val interface{}) Mapper {
 			continue
 		}
 		if field.Type.Kind() == reflect.Pointer {
-			ptrVal := recursiveParseStandardSwagger(ct.Field(i).Interface())
+			ptrVal := RecursiveParseStandardSwagger(ct.Field(i).Interface())
 			if len(ptrVal) == 0 {
 				continue
 			}
@@ -179,7 +181,7 @@ func recursiveParseStandardSwagger(val interface{}) Mapper {
 			mapVal := reflect.ValueOf(val)
 			subMapper := make(Mapper)
 			for _, v := range mapVal.MapKeys() {
-				subVal := recursiveParseStandardSwagger(mapVal.MapIndex(v).Interface())
+				subVal := RecursiveParseStandardSwagger(mapVal.MapIndex(v).Interface())
 				if IsNil(subVal) {
 					continue
 				}
@@ -194,7 +196,7 @@ func recursiveParseStandardSwagger(val interface{}) Mapper {
 				for i := 0; i < arrVal.Len(); i++ {
 					item := arrVal.Index(i)
 					if item.Kind() == reflect.Pointer {
-						arr = append(arr, recursiveParseStandardSwagger(item.Interface()))
+						arr = append(arr, RecursiveParseStandardSwagger(item.Interface()))
 					} else {
 						arr = append(arr, item.Interface())
 					}
