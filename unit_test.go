@@ -24,7 +24,7 @@ func authController(module *core.DynamicModule) *core.DynamicController {
 	authCtrl := module.NewController("Auth").Metadata(swagger.ApiTag("Auth")).Registry()
 
 	authCtrl.Pipe(
-		core.Body(&SignUpUser{}),
+		core.Body(SignUpUser{}),
 	).Post("/", func(ctx core.Ctx) error {
 		payload := ctx.Body().(*SignUpUser)
 
@@ -43,13 +43,13 @@ func managerController(module *core.DynamicModule) *core.DynamicController {
 	).Registry()
 
 	ctrl.Pipe(
-		core.Query(&FindUser{}),
+		core.Query(FindUser{}),
 	).Get("/", func(ctx core.Ctx) error {
 		return ctx.JSON(core.Map{"data": "ok"})
 	})
 
 	ctrl.Pipe(
-		core.Body(&SignUpUser{}),
+		core.Body(SignUpUser{}),
 	).Post("/", func(ctx core.Ctx) error {
 		return ctx.JSON(core.Map{"data": "ok"})
 	})

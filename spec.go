@@ -90,7 +90,7 @@ func (spec *SpecBuilder) Build() *SpecBuilder {
 // swagger API endpoint at http://localhost:8080/swagger/doc.json.
 func SetUp(path string, app *core.App, spec *SpecBuilder) {
 	spec.ParsePaths(app)
-	mapper := recursiveParseStandardSwagger(spec)
+	mapper := RecursiveParseStandardSwagger(spec)
 	jsonBytes, _ := json.Marshal(mapper)
 
 	swaggerInfo := &swag.Spec{

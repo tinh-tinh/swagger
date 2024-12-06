@@ -82,8 +82,8 @@ func Test_recursive(t *testing.T) {
 		Items: []*Children{child, child2},
 	}
 	parent2 := &Parent{}
-	mapper1 := recursiveParseStandardSwagger(parent)
-	mapper2 := recursiveParseStandardSwagger(parent2)
+	mapper1 := RecursiveParseStandardSwagger(parent)
+	mapper2 := RecursiveParseStandardSwagger(parent2)
 
 	asrt := assert.New(t)
 	asrt.Equal(1, len(mapper1))

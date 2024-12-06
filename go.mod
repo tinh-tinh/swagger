@@ -6,7 +6,7 @@ require (
 	github.com/stretchr/testify v1.9.0
 	github.com/swaggo/http-swagger v1.3.4
 	github.com/swaggo/swag v1.16.4
-	github.com/tinh-tinh/tinhtinh v1.2.4
+	github.com/tinh-tinh/tinhtinh v1.4.0
 )
 
 require (
