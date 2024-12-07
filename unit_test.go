@@ -25,7 +25,7 @@ func authController(module *core.DynamicModule) *core.DynamicController {
 
 	authCtrl.Pipe(
 		core.Body(SignUpUser{}),
-	).Post("/", func(ctx core.Ctx) error {
+	).Post("", func(ctx core.Ctx) error {
 		payload := ctx.Body().(*SignUpUser)
 
 		return ctx.JSON(core.Map{
@@ -44,13 +44,13 @@ func managerController(module *core.DynamicModule) *core.DynamicController {
 
 	ctrl.Pipe(
 		core.Query(FindUser{}),
-	).Get("/", func(ctx core.Ctx) error {
+	).Get("", func(ctx core.Ctx) error {
 		return ctx.JSON(core.Map{"data": "ok"})
 	})
 
 	ctrl.Pipe(
 		core.Body(SignUpUser{}),
-	).Post("/", func(ctx core.Ctx) error {
+	).Post("", func(ctx core.Ctx) error {
 		return ctx.JSON(core.Map{"data": "ok"})
 	})
 
@@ -79,23 +79,23 @@ func postController(module *core.DynamicModule) *core.DynamicController {
 			Description: "file upload",
 			Required:    true,
 		}),
-	).Post("/", func(ctx core.Ctx) error {
+	).Post("", func(ctx core.Ctx) error {
 		return ctx.JSON(core.Map{"data": "ok"})
 	})
 
-	ctrl.Get("/", func(ctx core.Ctx) error {
+	ctrl.Get("", func(ctx core.Ctx) error {
 		return ctx.JSON(core.Map{"data": "ok"})
 	})
 
-	ctrl.Get("/{id}", func(ctx core.Ctx) error {
+	ctrl.Get("{id}", func(ctx core.Ctx) error {
 		return ctx.JSON(core.Map{"data": "ok"})
 	})
 
-	ctrl.Put("/{id}", func(ctx core.Ctx) error {
+	ctrl.Put("{id}", func(ctx core.Ctx) error {
 		return ctx.JSON(core.Map{"data": "ok"})
 	})
 
-	ctrl.Delete("/{id}", func(ctx core.Ctx) error {
+	ctrl.Delete("{id}", func(ctx core.Ctx) error {
 		return ctx.JSON(core.Map{"data": "ok"})
 	})
 
