@@ -92,4 +92,8 @@ func Test_Spec(t *testing.T) {
 	assert.Equal(t, "file upload", paths["/posts"].Post.Parameters[0].Description)
 	assert.True(t, paths["/posts"].Post.Parameters[0].Required)
 	assert.Empty(t, paths["/posts"].Post.Parameters[0].Items)
+
+	assert.Equal(t, "id", paths["/posts/{id}"].Get.Parameters[0].Name)
+	assert.Equal(t, "path", paths["/posts/{id}"].Get.Parameters[0].In)
+	assert.Equal(t, "#/definitions/response", paths["/posts/{id}"].Get.Responses["200"].Schema.Ref)
 }

@@ -84,6 +84,20 @@ func (spec *SpecBuilder) ParsePaths(app *core.App) {
 		response := &ResponseObject{
 			Description: "Ok",
 		}
+
+		findOkIdx := slices.IndexFunc(route.Metadata, func(v *core.Metadata) bool {
+			return v.Key == OK_RESPONSE
+		})
+
+		if findOkIdx != -1 {
+			res := route.Metadata[findOkIdx].Value
+			definitions[GetNameStruct(res)] = ParseDefinition(res)
+
+			response.Schema = &SchemaObject{
+				Ref: "#/definitions/" + firstLetterToLower(GetNameStruct(res)),
+			}
+		}
+
 		res := map[string]*ResponseObject{"200": response}
 		operation := &OperationObject{
 			Tags:       []string{},

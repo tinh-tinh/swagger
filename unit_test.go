@@ -15,6 +15,10 @@ type SignUpUser struct {
 	Birth    time.Time `validate:"required" example:"2024-12-12"`
 }
 
+type Param struct {
+	ID string `path:"id"`
+}
+
 type FindUser struct {
 	Name string `validate:"required,isAlpha" query:"name" example:"ac"`
 	Age  uint   `validate:"required,isInt" query:"age"`
@@ -69,6 +73,10 @@ type UploadFile struct {
 	File storage.File `example:"file"`
 }
 
+type Response struct {
+	Title string `example:"Acrane"`
+}
+
 func postController(module *core.DynamicModule) *core.DynamicController {
 	ctrl := module.NewController("Posts").Metadata(swagger.ApiTag("Post")).Registry()
 
@@ -87,15 +95,15 @@ func postController(module *core.DynamicModule) *core.DynamicController {
 		return ctx.JSON(core.Map{"data": "ok"})
 	})
 
-	ctrl.Get("{id}", func(ctx core.Ctx) error {
+	ctrl.Metadata(swagger.ApiOkResponse(&Response{})).Pipe(core.Param(Param{})).Get("{id}", func(ctx core.Ctx) error {
 		return ctx.JSON(core.Map{"data": "ok"})
 	})
 
-	ctrl.Put("{id}", func(ctx core.Ctx) error {
+	ctrl.Pipe(core.Param(Param{})).Put("{id}", func(ctx core.Ctx) error {
 		return ctx.JSON(core.Map{"data": "ok"})
 	})
 
-	ctrl.Delete("{id}", func(ctx core.Ctx) error {
+	ctrl.Pipe(core.Param(Param{})).Delete("{id}", func(ctx core.Ctx) error {
 		return ctx.JSON(core.Map{"data": "ok"})
 	})
 
