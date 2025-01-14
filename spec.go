@@ -6,7 +6,7 @@ import (
 
 	httpSwagger "github.com/swaggo/http-swagger"
 	"github.com/swaggo/swag"
-	"github.com/tinh-tinh/tinhtinh/core"
+	"github.com/tinh-tinh/tinhtinh/v2/core"
 )
 
 func NewSpecBuilder() *SpecBuilder {

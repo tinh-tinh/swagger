@@ -3,9 +3,9 @@ package swagger_test
 import (
 	"time"
 
-	"github.com/tinh-tinh/swagger"
-	"github.com/tinh-tinh/tinhtinh/core"
-	"github.com/tinh-tinh/tinhtinh/middleware/storage"
+	"github.com/tinh-tinh/swagger/v2"
+	"github.com/tinh-tinh/tinhtinh/v2/core"
+	"github.com/tinh-tinh/tinhtinh/v2/middleware/storage"
 )
 
 type SignUpUser struct {
@@ -24,7 +24,7 @@ type FindUser struct {
 	Age  uint   `validate:"required,isInt" query:"age"`
 }
 
-func authController(module *core.DynamicModule) *core.DynamicController {
+func authController(module core.Module) core.Controller {
 	authCtrl := module.NewController("Auth").Metadata(swagger.ApiTag("Auth")).Registry()
 
 	authCtrl.Pipe(
@@ -40,7 +40,7 @@ func authController(module *core.DynamicModule) *core.DynamicController {
 	return authCtrl
 }
 
-func managerController(module *core.DynamicModule) *core.DynamicController {
+func managerController(module core.Module) core.Controller {
 	ctrl := module.NewController("Users").Version("1").Metadata(
 		swagger.ApiTag("User"),
 		swagger.ApiSecurity("authorization"),
@@ -61,9 +61,9 @@ func managerController(module *core.DynamicModule) *core.DynamicController {
 	return ctrl
 }
 
-func UserModule(module *core.DynamicModule) *core.DynamicModule {
+func UserModule(module core.Module) core.Module {
 	userModule := module.New(core.NewModuleOptions{
-		Controllers: []core.Controller{managerController, authController},
+		Controllers: []core.Controllers{managerController, authController},
 	})
 
 	return userModule
@@ -77,7 +77,7 @@ type Response struct {
 	Title string `example:"Acrane"`
 }
 
-func postController(module *core.DynamicModule) *core.DynamicController {
+func postController(module core.Module) core.Controller {
 	ctrl := module.NewController("Posts").Metadata(swagger.ApiTag("Post")).Registry()
 
 	ctrl.Metadata(
@@ -110,17 +110,17 @@ func postController(module *core.DynamicModule) *core.DynamicController {
 	return ctrl
 }
 
-func PostModule(module *core.DynamicModule) *core.DynamicModule {
+func PostModule(module core.Module) core.Module {
 	postModule := module.New(core.NewModuleOptions{
-		Controllers: []core.Controller{postController},
+		Controllers: []core.Controllers{postController},
 	})
 
 	return postModule
 }
 
-func AppModule() *core.DynamicModule {
+func AppModule() core.Module {
 	appModule := core.NewModule(core.NewModuleOptions{
-		Imports: []core.Module{
+		Imports: []core.Modules{
 			UserModule,
 			PostModule,
 		},

@@ -1,4 +1,4 @@
-module github.com/tinh-tinh/swagger
+module github.com/tinh-tinh/swagger/v2
 
 go 1.22.0
 
@@ -6,7 +6,7 @@ require (
 	github.com/stretchr/testify v1.9.0
 	github.com/swaggo/http-swagger v1.3.4
 	github.com/swaggo/swag v1.16.4
-	github.com/tinh-tinh/tinhtinh v1.4.0
+	github.com/tinh-tinh/tinhtinh/v2 v2.0.0-beta.7
 )
 
 require (
