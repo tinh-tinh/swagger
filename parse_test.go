@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/tinh-tinh/tinhtinh/core"
+	"github.com/tinh-tinh/tinhtinh/v2/core"
 )
 
 func Test_ScanQuery(t *testing.T) {

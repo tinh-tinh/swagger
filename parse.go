@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tinh-tinh/tinhtinh/core"
+	"github.com/tinh-tinh/tinhtinh/v2/core"
 )
 
 // ParsePaths parse all routes in the app and create a swagger spec.
@@ -28,7 +28,7 @@ import (
 //     of the dto in the parameters section.
 func (spec *SpecBuilder) ParsePaths(app *core.App) {
 	// mapperDoc := app.Module.MapperDoc
-	routes := app.Module.Routers
+	routes := app.Module.GetRouters()
 
 	pathObject := make(PathObject)
 	definitions := make(map[string]*DefinitionObject)

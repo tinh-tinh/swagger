@@ -1,6 +1,6 @@
 package swagger
 
-import "github.com/tinh-tinh/tinhtinh/core"
+import "github.com/tinh-tinh/tinhtinh/v2/core"
 
 const TAG = "tag"
 
