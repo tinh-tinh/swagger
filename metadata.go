@@ -17,7 +17,11 @@ func ApiSecurity(names ...string) *core.Metadata {
 const CONSUMER = "consumer"
 
 func ApiConsumer(names ...string) *core.Metadata {
-	return core.SetMetadata(CONSUMER, names)
+	convertName := []string{}
+	for _, name := range names {
+		convertName = append(convertName, firstLetterToLower(name))
+	}
+	return core.SetMetadata(CONSUMER, convertName)
 }
 
 const FILE = "file"

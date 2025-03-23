@@ -43,7 +43,7 @@ func authController(module core.Module) core.Controller {
 func managerController(module core.Module) core.Controller {
 	ctrl := module.NewController("Users").Version("1").Metadata(
 		swagger.ApiTag("User"),
-		swagger.ApiSecurity("authorization"),
+		swagger.ApiSecurity("Authorization"),
 	).Registry()
 
 	ctrl.Pipe(
