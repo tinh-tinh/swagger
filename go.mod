@@ -1,6 +1,8 @@
 module github.com/tinh-tinh/swagger/v2
 
-go 1.22.0
+go 1.23.0
+
+toolchain go1.24.1
 
 require (
 	github.com/stretchr/testify v1.9.0
@@ -20,7 +22,7 @@ require (
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/swaggo/files v1.0.1 // indirect
-	golang.org/x/net v0.31.0 // indirect
+	golang.org/x/net v0.36.0 // indirect
 	golang.org/x/tools v0.27.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
