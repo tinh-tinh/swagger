@@ -42,6 +42,7 @@ type OperationObject struct {
 	Consumes    []string
 	Produces    []string
 	Parameters  []*ParameterObject
+	RequestBody *RequestBodyObject
 	Schemes     []string
 	Deprecated  bool
 	Security    []map[string][]string
@@ -55,14 +56,23 @@ type ParameterObject struct {
 	Description string
 	Default     string
 	Required    bool
-	Type        string
-	Items       map[string]string
 	Format      string
 	Schema      *SchemaObject
 }
 
-// -------- Definition Object --------
-type DefinitionObject struct {
+type RequestBodyObject struct {
+	Required    bool
+	Description string
+	Content     map[string]*MediaTypeObject
+}
+
+type MediaTypeObject struct {
+	Schema  *SchemaObject
+	Example any
+}
+
+// -------- Component Object --------
+type SchemasObject struct {
 	Type       string
 	Required   []string
 	Properties map[string]*SchemaObject
@@ -70,13 +80,12 @@ type DefinitionObject struct {
 
 // -------- Schema Object --------
 type SchemaObject struct {
-	Type     string
-	Ref      string
-	Example  string
-	Format   string
-	Required bool
-	Enum     []string
-	Items    *ItemsObject
+	Type    string
+	Ref     string
+	Example string
+	Format  string
+	Enum    []string
+	Items   *ItemsObject
 }
 
 // -------- Response Object --------
@@ -95,14 +104,13 @@ type ItemsObject struct {
 
 // -------- Security Scheme Object --------
 type SecuritySchemeObject struct {
-	Type             string
-	Description      string
-	Name             string
-	In               string
-	Flow             string
-	AuthorizationUrl string
-	Token            string
-	Scopes           map[string]string
+	Type         string
+	Description  string
+	Name         string
+	In           string
+	Scheme       string
+	BearerFormat string
+	Flow         string
 }
 
 // -------- Header Object --------
@@ -113,15 +121,30 @@ type HeaderObject struct {
 	Enum        []string
 }
 
+type ComponentObject struct {
+	Schemas         map[string]*SchemasObject
+	SecuritySchemes map[string]*SecuritySchemeObject
+}
+
+type ServerVariableObject struct {
+	Enum        string
+	Default     string
+	Description string
+}
+
+type ServerObject struct {
+	Url         string
+	Description string
+	Variables   map[string]*ServerVariableObject
+}
+
 type SpecBuilder struct {
-	Swagger             string
-	Info                *InfoObject
-	Schemes             []string
-	Produces            []string
-	Consumes            []string
-	Host                string
-	BasePath            string
-	Paths               PathObject
-	Definitions         map[string]*DefinitionObject
-	SecurityDefinitions map[string]*SecuritySchemeObject
+	Openapi    string
+	Info       *InfoObject
+	Schemes    []string
+	Produces   []string
+	Consumes   []string
+	Servers    []*ServerObject
+	Paths      PathObject
+	Components *ComponentObject
 }

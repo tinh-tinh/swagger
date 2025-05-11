@@ -1,11 +1,12 @@
 package swagger
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 
-	httpSwagger "github.com/swaggo/http-swagger"
-	"github.com/swaggo/swag"
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/tinh-tinh/tinhtinh/v2/core"
 )
 
@@ -26,7 +27,11 @@ func NewSpecBuilder() *SpecBuilder {
 				Url:  "http://www.apache.org/licenses/LICENSE-2.0.html",
 			},
 		},
-		Swagger: "2.0",
+		Components: &ComponentObject{
+			Schemas:         make(map[string]*SchemasObject),
+			SecuritySchemes: make(map[string]*SecuritySchemeObject),
+		},
+		Openapi: "3.0.0",
 		Schemes: []string{"http", "https"},
 	}
 }
@@ -46,22 +51,14 @@ func (spec *SpecBuilder) SetVersion(version string) *SpecBuilder {
 	return spec
 }
 
-func (spec *SpecBuilder) SetHost(host string) *SpecBuilder {
-	spec.Host = host
-	return spec
-}
-
-func (spec *SpecBuilder) SetBasePath(basePath string) *SpecBuilder {
-	spec.BasePath = basePath
+func (spec *SpecBuilder) SetServer(server *ServerObject) *SpecBuilder {
+	spec.Servers = append(spec.Servers, server)
 	return spec
 }
 
 func (spec *SpecBuilder) AddSecurity(security ...*SecuritySchemeObject) *SpecBuilder {
-	if spec.SecurityDefinitions == nil {
-		spec.SecurityDefinitions = make(map[string]*SecuritySchemeObject)
-	}
 	for _, v := range security {
-		spec.SecurityDefinitions[v.Name] = v
+		spec.Components.SecuritySchemes[v.Name] = v
 	}
 	return spec
 }
@@ -93,23 +90,57 @@ func SetUp(path string, app *core.App, spec *SpecBuilder) {
 	mapper := RecursiveParseStandardSwagger(spec)
 	jsonBytes, _ := json.Marshal(mapper)
 
-	swaggerInfo := &swag.Spec{
-		Version:          spec.Info.Version,
-		Host:             spec.Host,
-		BasePath:         spec.BasePath,
-		Schemes:          spec.Schemes,
-		Title:            spec.Info.Title,
-		Description:      spec.Info.Description,
-		InfoInstanceName: "swagger",
-		SwaggerTemplate:  string(jsonBytes),
-		LeftDelim:        "{{",
-		RightDelim:       "}}",
+	fmt.Println(string(jsonBytes))
+	ctx := context.Background()
+	loader := &openapi3.Loader{Context: ctx, IsExternalRefsAllowed: true}
+	doc, err := loader.LoadFromData(jsonBytes)
+	if err != nil {
+		fmt.Println(err)
+		return
 	}
+	// Validate document
+	_ = doc.Validate(ctx)
+
+	// Serve the OpenAPI document as JSON
+	app.Mux.Handle("/openapi.json", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(doc); err != nil {
+			http.Error(w, "Failed to encode OpenAPI document", http.StatusInternalServerError)
+		}
+	}))
 
 	route := fmt.Sprintf("%s%s", core.IfSlashPrefixString(app.Prefix), core.IfSlashPrefixString(path))
-
-	swag.Register(swaggerInfo.InstanceName(), swaggerInfo)
-	app.Mux.Handle("GET "+route+"/*", httpSwagger.Handler(
-		httpSwagger.URL("http://"+spec.Host+route+"/doc.json"),
-	))
+	// Serve Swagger UI HTML from CDN
+	app.Mux.Handle(route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		w.Write([]byte(`
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Swagger UI</title>
+            <!-- Load Swagger UI from CDN -->
+            <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@4.15.5/swagger-ui.css" />
+            <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@4.15.5/swagger-ui-bundle.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@4.15.5/swagger-ui-standalone-preset.js"></script>
+        </head>
+        <body>
+            <div id="swagger-ui"></div>
+            <script>
+                const ui = SwaggerUIBundle({
+                    url: "/openapi.json",  // URL for your OpenAPI spec
+                    dom_id: '#swagger-ui',
+                    deepLinking: true,
+                    presets: [
+                        SwaggerUIBundle.presets.apis,
+                        SwaggerUIBundle.SwaggerUIStandalonePreset
+                    ],
+                    layout: "BaseLayout"
+                });
+            </script>
+        </body>
+        </html>
+        `))
+	}))
 }

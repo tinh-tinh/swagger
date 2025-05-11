@@ -21,7 +21,7 @@ type Param struct {
 
 type FindUser struct {
 	Name string `validate:"required,isAlpha" query:"name" example:"ac"`
-	Age  uint   `validate:"required,isInt" query:"age"`
+	Age  int    `validate:"required,isInt" query:"age"`
 }
 
 func authController(module core.Module) core.Controller {
@@ -43,7 +43,7 @@ func authController(module core.Module) core.Controller {
 func managerController(module core.Module) core.Controller {
 	ctrl := module.NewController("Users").Version("1").Metadata(
 		swagger.ApiTag("User"),
-		swagger.ApiSecurity("Authorization"),
+		swagger.ApiSecurity("bearerAuth"),
 	).Registry()
 
 	ctrl.Pipe(
