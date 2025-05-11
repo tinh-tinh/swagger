@@ -45,8 +45,9 @@ func Test_Spec(t *testing.T) {
 	assert.NotNil(t, document.Components.Schemas["SignUpUser"])
 	assert.Equal(t, "object", document.Components.Schemas["SignUpUser"].Type)
 	assert.NotNil(t, document.Components.Schemas["SignUpUser"].Properties)
-	assert.Equal(t, "string", document.Components.Schemas["SignUpUser"].Properties["Email"].Type)
-	assert.Equal(t, "john@gmail.com", document.Components.Schemas["SignUpUser"].Properties["Email"].Example)
+	assert.NotNil(t, document.Components.Schemas["SignUpUser"].Properties["email"])
+	assert.Equal(t, "string", document.Components.Schemas["SignUpUser"].Properties["email"].Type)
+	assert.Equal(t, "john@gmail.com", document.Components.Schemas["SignUpUser"].Properties["email"].Example)
 
 	assert.NotNil(t, document.Components.SecuritySchemes["bearerAuth"])
 	assert.Equal(t, "Bearer", document.Components.SecuritySchemes["bearerAuth"].Scheme)
@@ -65,7 +66,7 @@ func Test_Spec(t *testing.T) {
 	assert.Empty(t, paths["/api/auth"].Post.Consumes)
 	assert.Empty(t, paths["/api/auth"].Post.Produces)
 	assert.NotNil(t, paths["/api/auth"].Post.RequestBody.Content["SignUpUser"])
-	assert.Equal(t, "#/components/schemas/signUpUser", paths["/api/auth"].Post.RequestBody.Content["SignUpUser"].Schema.Ref)
+	assert.Equal(t, "#/components/schemas/SignUpUser", paths["/api/auth"].Post.RequestBody.Content["SignUpUser"].Schema.Ref)
 	assert.Empty(t, paths["/api/auth"].Post.Schemes)
 	assert.False(t, paths["/api/auth"].Post.Deprecated)
 	assert.Empty(t, paths["/api/auth"].Post.Security)
@@ -95,6 +96,6 @@ func Test_Spec(t *testing.T) {
 
 	assert.Equal(t, "id", paths["/api/posts/{id}"].Get.Parameters[0].Name)
 	assert.Equal(t, "path", paths["/api/posts/{id}"].Get.Parameters[0].In)
-	assert.Equal(t, "#/components/schemas/response", paths["/api/posts/{id}"].Get.Responses["200"].Schema.Ref)
+	assert.Equal(t, "#/components/schemas/Response", paths["/api/posts/{id}"].Get.Responses["200"].Schema.Ref)
 
 }

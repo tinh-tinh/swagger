@@ -24,7 +24,8 @@ type PostItem struct {
 }
 
 type Post struct {
-	Item *PostItem `validate:"nested"`
+	Item     *PostItem `validate:"nested"`
+	Managers []string  `example:"abc,def"`
 }
 
 type Param struct {

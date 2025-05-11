@@ -87,8 +87,7 @@ func (spec *SpecBuilder) Build() *SpecBuilder {
 // swagger API endpoint at http://localhost:8080/swagger/doc.json.
 func SetUp(path string, app *core.App, spec *SpecBuilder) {
 	spec.ParsePaths(app)
-	mapper := RecursiveParseStandardSwagger(spec)
-	jsonBytes, _ := json.Marshal(mapper)
+	jsonBytes, _ := json.Marshal(spec)
 
 	ctx := context.Background()
 	loader := &openapi3.Loader{Context: ctx, IsExternalRefsAllowed: true}
