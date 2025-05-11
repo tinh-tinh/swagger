@@ -52,7 +52,7 @@ func (spec *SpecBuilder) ParsePaths(app *core.App) {
 				schemas[common.GetStructName(val)] = ParseSchema(val)
 				mediaTypes[common.GetStructName(val)] = &MediaTypeObject{
 					Schema: &SchemaObject{
-						Ref: "#/components/schemas/" + firstLetterToLower(common.GetStructName(val)),
+						Ref: "#/components/schemas/" + common.GetStructName(val),
 					},
 				}
 			case core.InQuery:
@@ -100,7 +100,7 @@ func (spec *SpecBuilder) ParsePaths(app *core.App) {
 			schemas[common.GetStructName(res)] = ParseSchema(res)
 
 			response.Schema = &SchemaObject{
-				Ref: "#/components/schemas/" + firstLetterToLower(common.GetStructName(res)),
+				Ref: "#/components/schemas/" + common.GetStructName(res),
 			}
 		}
 
@@ -171,85 +171,6 @@ func (spec *SpecBuilder) ParsePaths(app *core.App) {
 
 type Mapper map[string]interface{}
 
-// RecursiveParseStandardSwagger takes a struct and recursively parses its fields
-// to create a swagger-style mapper. The mapper is a map[string]interface{}
-// where the keys are the field names (lowercased) and the values are the
-// field values. The rules for parsing the fields are as follows:
-//
-// - If the field is a pointer, it is recursively parsed.
-// - If the field is a map, its values are recursively parsed.
-// - If the field is a slice, its elements are recursively parsed.
-// - If the field is a primitive type, its value is used as is.
-//
-// The function returns a Mapper or nil if the input is nil.
-func RecursiveParseStandardSwagger(val interface{}) Mapper {
-	mapper := make(Mapper)
-
-	if reflect.ValueOf(val).IsNil() {
-		return nil
-	}
-	ct := reflect.ValueOf(val).Elem()
-	for i := range ct.NumField() {
-		field := ct.Type().Field(i)
-		key := firstLetterToLower(field.Name)
-		if key == "ref" {
-			key = "$ref"
-		}
-		if ct.Field(i).Interface() == nil {
-			continue
-		}
-		if field.Type.Kind() == reflect.Pointer {
-			ptrVal := RecursiveParseStandardSwagger(ct.Field(i).Interface())
-			if len(ptrVal) == 0 {
-				continue
-			}
-			mapper[key] = ptrVal
-		} else if field.Type.Kind() == reflect.Map {
-			val := ct.Field(i).Interface()
-			mapVal := reflect.ValueOf(val)
-			subMapper := make(Mapper)
-			for _, v := range mapVal.MapKeys() {
-				subVal := RecursiveParseStandardSwagger(mapVal.MapIndex(v).Interface())
-				if IsNil(subVal) {
-					continue
-				}
-				subKey := firstLetterToLower(v.String())
-				subMapper[subKey] = subVal
-			}
-			mapper[key] = subMapper
-		} else if field.Type.Kind() == reflect.Slice {
-			arrVal := reflect.ValueOf(ct.Field(i).Interface())
-			if arrVal.IsValid() {
-				arr := []interface{}{}
-				for i := 0; i < arrVal.Len(); i++ {
-					item := arrVal.Index(i)
-					if item.Kind() == reflect.Pointer {
-						arr = append(arr, RecursiveParseStandardSwagger(item.Interface()))
-					} else {
-						arr = append(arr, item.Interface())
-					}
-				}
-				if IsNil(arr) {
-					continue
-				}
-				mapper[key] = arr
-			}
-		} else {
-			val := ct.Field(i).Interface()
-			if IsNil(val) {
-				continue
-			}
-			mapper[key] = ct.Field(i).Interface()
-		}
-	}
-
-	if len(mapper) == 0 {
-		return nil
-	}
-
-	return mapper
-}
-
 func ParseSchema(dto any) *SchemaObject {
 	properties := make(map[string]*SchemaObject)
 	requiredFields := []string{}
@@ -262,7 +183,10 @@ func ParseSchema(dto any) *SchemaObject {
 	for i := 0; i < v.NumField(); i++ {
 		field := v.Field(i)
 		fieldType := v.Type().Field(i)
-		fieldName := fieldType.Name
+		fieldName := fieldType.Tag.Get("json")
+		if fieldName == "" {
+			fieldName = strings.ToLower(fieldType.Name)
+		}
 
 		// Skip unexported fields
 		if !field.CanSet() || !field.CanInterface() {
@@ -270,7 +194,7 @@ func ParseSchema(dto any) *SchemaObject {
 		}
 
 		schema := &SchemaObject{
-			Type: mappingType(field),
+			Type: mappingType(field.Type()),
 		}
 
 		if reflect.TypeOf(field.Interface()) == reflect.TypeOf(time.Time{}) {
@@ -283,7 +207,14 @@ func ParseSchema(dto any) *SchemaObject {
 			return v == "required"
 		})
 		if requiredIdx != -1 {
-			requiredFields = append(requiredFields, strings.ToLower(fieldName))
+			requiredFields = append(requiredFields, fieldName)
+		}
+
+		if schema.Type == "array" {
+			elemType := field.Type().Elem()
+			schema.Items = &ItemsObject{
+				Type: mappingType(elemType),
+			}
 		}
 
 		nestedIdx := slices.IndexFunc(strings.Split(validator, ","), func(v string) bool {
@@ -304,7 +235,11 @@ func ParseSchema(dto any) *SchemaObject {
 			// Parse example tag
 			example := fieldType.Tag.Get("example")
 			if example != "" {
-				schema.Example = example
+				if schema.Type == "array" {
+					schema.Example = strings.Split(example, ",")
+				} else {
+					schema.Example = example
+				}
 			}
 
 			properties[fieldName] = schema
@@ -345,7 +280,7 @@ func ScanQuery(val interface{}, in core.InDto) []*ParameterObject {
 			Name: name,
 			// Type: mappingType(ct.Field(i)),
 			Schema: &SchemaObject{
-				Type: mappingType(ct.Field(i)),
+				Type: mappingType(ct.Field(i).Type()),
 			},
 			In: string(in),
 		}
