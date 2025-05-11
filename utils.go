@@ -61,20 +61,9 @@ func mappingType(val reflect.Value) string {
 		return "number"
 	case reflect.String:
 		return "string"
-	case reflect.Struct:
+	case reflect.Pointer:
 		return "object"
 	default:
 		return ""
 	}
-}
-
-func GetNameStruct(str interface{}) string {
-	name := ""
-	if t := reflect.TypeOf(str); t.Kind() == reflect.Ptr {
-		name = t.Elem().Name()
-	} else {
-		name = t.Name()
-	}
-
-	return name
 }

@@ -80,12 +80,14 @@ type SchemasObject struct {
 
 // -------- Schema Object --------
 type SchemaObject struct {
-	Type    string
-	Ref     string
-	Example string
-	Format  string
-	Enum    []string
-	Items   *ItemsObject
+	Type       string
+	Required   []string
+	Ref        string
+	Example    string
+	Format     string
+	Enum       []string
+	Items      *ItemsObject
+	Properties map[string]*SchemaObject
 }
 
 // -------- Response Object --------
@@ -122,7 +124,7 @@ type HeaderObject struct {
 }
 
 type ComponentObject struct {
-	Schemas         map[string]*SchemasObject
+	Schemas         map[string]*SchemaObject
 	SecuritySchemes map[string]*SecuritySchemeObject
 }
 

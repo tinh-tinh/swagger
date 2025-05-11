@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/tinh-tinh/tinhtinh/v2/common"
 	"github.com/tinh-tinh/tinhtinh/v2/core"
 )
 
@@ -31,7 +32,7 @@ func (spec *SpecBuilder) ParsePaths(app *core.App) {
 	routes := app.Module.GetRouters()
 
 	pathObject := make(PathObject)
-	schemas := make(map[string]*SchemasObject)
+	schemas := make(map[string]*SchemaObject)
 
 	// Parse routes
 	for _, route := range routes {
@@ -48,19 +49,12 @@ func (spec *SpecBuilder) ParsePaths(app *core.App) {
 			val := dto.GetValue()
 			switch dto.GetLocation() {
 			case core.InBody:
-				schemas[GetNameStruct(val)] = ParseSchema(val)
-				mediaTypes[GetNameStruct(val)] = &MediaTypeObject{
+				schemas[common.GetStructName(val)] = ParseSchema(val)
+				mediaTypes[common.GetStructName(val)] = &MediaTypeObject{
 					Schema: &SchemaObject{
-						Ref: "#/components/schemas/" + firstLetterToLower(GetNameStruct(val)),
+						Ref: "#/components/schemas/" + firstLetterToLower(common.GetStructName(val)),
 					},
 				}
-				// parameters = append(parameters, &ParameterObject{
-				// 	Name: GetNameStruct(val),
-				// 	In:   string(dto.GetLocation()),
-				// 	Schema: &SchemaObject{
-				// 		Ref: "#/components/schemas/" + firstLetterToLower(GetNameStruct(val)),
-				// 	},
-				// })
 			case core.InQuery:
 				parameters = append(parameters, ScanQuery(val, dto.GetLocation())...)
 			case core.InPath:
@@ -103,10 +97,10 @@ func (spec *SpecBuilder) ParsePaths(app *core.App) {
 
 		if findOkIdx != -1 {
 			res := route.Metadata[findOkIdx].Value
-			schemas[GetNameStruct(res)] = ParseSchema(res)
+			schemas[common.GetStructName(res)] = ParseSchema(res)
 
 			response.Schema = &SchemaObject{
-				Ref: "#/components/schemas/" + firstLetterToLower(GetNameStruct(res)),
+				Ref: "#/components/schemas/" + firstLetterToLower(common.GetStructName(res)),
 			}
 		}
 
@@ -256,45 +250,71 @@ func RecursiveParseStandardSwagger(val interface{}) Mapper {
 	return mapper
 }
 
-// ParseSchema takes a struct and recursively parses its fields
-// to create a swagger-style DefinitionObject. The rules for parsing the fields are as follows:
-//
-// - If the field is a pointer, it is recursively parsed.
-// - If the field is a map, its values are recursively parsed.
-// - If the field is a slice, its elements are recursively parsed.
-// - If the field is a primitive type, its value is used as is.
-//
-// The function returns a DefinitionObject or nil if the input is nil.
-func ParseSchema(dto interface{}) *SchemasObject {
+func ParseSchema(dto any) *SchemaObject {
 	properties := make(map[string]*SchemaObject)
-	ct := reflect.ValueOf(dto).Elem()
-	for i := 0; i < ct.NumField(); i++ {
-		schema := &SchemaObject{
-			Type: mappingType(ct.Field(i)),
+	requiredFields := []string{}
+
+	v := reflect.ValueOf(dto)
+	if v.Kind() == reflect.Ptr && !v.IsNil() {
+		v = v.Elem()
+	}
+
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Field(i)
+		fieldType := v.Type().Field(i)
+		fieldName := fieldType.Name
+
+		// Skip unexported fields
+		if !field.CanSet() || !field.CanInterface() {
+			continue
 		}
-		if reflect.TypeOf(ct.Field(i).Interface()) == reflect.TypeOf(time.Time{}) {
+
+		schema := &SchemaObject{
+			Type: mappingType(field),
+		}
+
+		if reflect.TypeOf(field.Interface()) == reflect.TypeOf(time.Time{}) {
 			schema.Format = "date-time"
 		}
 
-		field := ct.Type().Field(i)
-		// validator := field.Tag.Get("validate")
-		// isRequired := slices.IndexFunc(strings.Split(validator, ","), func(v string) bool { return v == "required" })
-		// if isRequired == -1 {
-		// 	schema.Required = false
-		// } else {
-		// 	schema.Required = true
-		// }
-		example := field.Tag.Get("example")
-		if example != "" {
-			schema.Example = example
+		// Parse validation tag
+		validator := fieldType.Tag.Get("validate")
+		requiredIdx := slices.IndexFunc(strings.Split(validator, ","), func(v string) bool {
+			return v == "required"
+		})
+		if requiredIdx != -1 {
+			requiredFields = append(requiredFields, strings.ToLower(fieldName))
 		}
 
-		properties[ct.Type().Field(i).Name] = schema
+		nestedIdx := slices.IndexFunc(strings.Split(validator, ","), func(v string) bool {
+			return v == "nested"
+		})
+		if nestedIdx != -1 {
+			if field.Kind() == reflect.Ptr && field.IsNil() {
+				// Create a new instance of the pointed-to struct
+				newValue := reflect.New(field.Type().Elem())
+				field.Set(newValue) // Set the new instance to the field
+				if schema.Properties == nil {
+					schema.Properties = make(map[string]*SchemaObject)
+				}
+				result := ParseSchema(field.Interface())
+				properties[fieldName] = result
+			}
+		} else {
+			// Parse example tag
+			example := fieldType.Tag.Get("example")
+			if example != "" {
+				schema.Example = example
+			}
+
+			properties[fieldName] = schema
+		}
 	}
 
-	return &SchemasObject{
+	return &SchemaObject{
 		Type:       "object",
 		Properties: properties,
+		Required:   requiredFields,
 	}
 }
 
