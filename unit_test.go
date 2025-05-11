@@ -13,6 +13,18 @@ type SignUpUser struct {
 	Email    string    `validate:"required,isEmail" example:"john@gmail.com"`
 	Password string    `validate:"required,isStrongPassword" example:"12345678@Tc"`
 	Birth    time.Time `validate:"required" example:"2024-12-12"`
+	Age      uint      `example:"3"`
+	Score    float32   `example:"9.4"`
+	IsAdmin  bool      `example:"false"`
+}
+
+type PostItem struct {
+	Id   int    `example:"1"`
+	Name string `example:"Title"`
+}
+
+type Post struct {
+	Item *PostItem `validate:"nested"`
 }
 
 type Param struct {
@@ -99,7 +111,7 @@ func postController(module core.Module) core.Controller {
 		return ctx.JSON(core.Map{"data": "ok"})
 	})
 
-	ctrl.Pipe(core.Param(Param{})).Put("{id}", func(ctx core.Ctx) error {
+	ctrl.Pipe(core.Param(Param{}), core.Body(Post{})).Put("{id}", func(ctx core.Ctx) error {
 		return ctx.JSON(core.Map{"data": "ok"})
 	})
 

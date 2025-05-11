@@ -28,7 +28,7 @@ func NewSpecBuilder() *SpecBuilder {
 			},
 		},
 		Components: &ComponentObject{
-			Schemas:         make(map[string]*SchemasObject),
+			Schemas:         make(map[string]*SchemaObject),
 			SecuritySchemes: make(map[string]*SecuritySchemeObject),
 		},
 		Openapi: "3.0.0",
@@ -90,7 +90,6 @@ func SetUp(path string, app *core.App, spec *SpecBuilder) {
 	mapper := RecursiveParseStandardSwagger(spec)
 	jsonBytes, _ := json.Marshal(mapper)
 
-	fmt.Println(string(jsonBytes))
 	ctx := context.Background()
 	loader := &openapi3.Loader{Context: ctx, IsExternalRefsAllowed: true}
 	doc, err := loader.LoadFromData(jsonBytes)
