@@ -31,27 +31,36 @@ func (spec *SpecBuilder) ParsePaths(app *core.App) {
 	routes := app.Module.GetRouters()
 
 	pathObject := make(PathObject)
-	definitions := make(map[string]*DefinitionObject)
+	schemas := make(map[string]*SchemasObject)
 
 	// Parse routes
 	for _, route := range routes {
 		parseRoute := core.ParseRoute(route.Method + " " + route.Path)
 		parseRoute.SetPrefix(route.Name)
+		if app.Prefix != "" {
+			parseRoute.SetPrefix(app.Prefix)
+		}
 		parameters := []*ParameterObject{}
+		mediaTypes := make(map[string]*MediaTypeObject)
 		dtos := route.Dtos
 		// Parse dto from pipe
 		for _, dto := range dtos {
 			val := dto.GetValue()
 			switch dto.GetLocation() {
 			case core.InBody:
-				definitions[GetNameStruct(val)] = ParseDefinition(val)
-				parameters = append(parameters, &ParameterObject{
-					Name: GetNameStruct(val),
-					In:   string(dto.GetLocation()),
+				schemas[GetNameStruct(val)] = ParseSchema(val)
+				mediaTypes[GetNameStruct(val)] = &MediaTypeObject{
 					Schema: &SchemaObject{
-						Ref: "#/definitions/" + firstLetterToLower(GetNameStruct(val)),
+						Ref: "#/components/schemas/" + firstLetterToLower(GetNameStruct(val)),
 					},
-				})
+				}
+				// parameters = append(parameters, &ParameterObject{
+				// 	Name: GetNameStruct(val),
+				// 	In:   string(dto.GetLocation()),
+				// 	Schema: &SchemaObject{
+				// 		Ref: "#/components/schemas/" + firstLetterToLower(GetNameStruct(val)),
+				// 	},
+				// })
 			case core.InQuery:
 				parameters = append(parameters, ScanQuery(val, dto.GetLocation())...)
 			case core.InPath:
@@ -67,11 +76,14 @@ func (spec *SpecBuilder) ParsePaths(app *core.App) {
 			if ok {
 				for _, file := range files {
 					parameters = append(parameters, &ParameterObject{
-						Name:        file.Name,
-						In:          "formData",
-						Type:        "file",
+						Name: file.Name,
+						In:   "formData",
+						// Type:        "file",
 						Required:    file.Required,
 						Description: file.Description,
+						Schema: &SchemaObject{
+							Type: "file",
+						},
 					})
 				}
 			}
@@ -91,10 +103,10 @@ func (spec *SpecBuilder) ParsePaths(app *core.App) {
 
 		if findOkIdx != -1 {
 			res := route.Metadata[findOkIdx].Value
-			definitions[GetNameStruct(res)] = ParseDefinition(res)
+			schemas[GetNameStruct(res)] = ParseSchema(res)
 
 			response.Schema = &SchemaObject{
-				Ref: "#/definitions/" + firstLetterToLower(GetNameStruct(res)),
+				Ref: "#/components/schemas/" + firstLetterToLower(GetNameStruct(res)),
 			}
 		}
 
@@ -105,6 +117,13 @@ func (spec *SpecBuilder) ParsePaths(app *core.App) {
 			Parameters: parameters,
 			Responses:  res,
 			Security:   []map[string][]string{},
+		}
+
+		if len(mediaTypes) > 0 {
+			operation.RequestBody = &RequestBodyObject{
+				Content:  mediaTypes,
+				Required: true,
+			}
 		}
 
 		// Api Tag
@@ -151,7 +170,8 @@ func (spec *SpecBuilder) ParsePaths(app *core.App) {
 		}
 	}
 
-	spec.Definitions = definitions
+	// spec.Definitions = definitions
+	spec.Components.Schemas = schemas
 	spec.Paths = pathObject
 }
 
@@ -175,7 +195,7 @@ func RecursiveParseStandardSwagger(val interface{}) Mapper {
 		return nil
 	}
 	ct := reflect.ValueOf(val).Elem()
-	for i := 0; i < ct.NumField(); i++ {
+	for i := range ct.NumField() {
 		field := ct.Type().Field(i)
 		key := firstLetterToLower(field.Name)
 		if key == "ref" {
@@ -236,7 +256,7 @@ func RecursiveParseStandardSwagger(val interface{}) Mapper {
 	return mapper
 }
 
-// ParseDefinition takes a struct and recursively parses its fields
+// ParseSchema takes a struct and recursively parses its fields
 // to create a swagger-style DefinitionObject. The rules for parsing the fields are as follows:
 //
 // - If the field is a pointer, it is recursively parsed.
@@ -245,7 +265,7 @@ func RecursiveParseStandardSwagger(val interface{}) Mapper {
 // - If the field is a primitive type, its value is used as is.
 //
 // The function returns a DefinitionObject or nil if the input is nil.
-func ParseDefinition(dto interface{}) *DefinitionObject {
+func ParseSchema(dto interface{}) *SchemasObject {
 	properties := make(map[string]*SchemaObject)
 	ct := reflect.ValueOf(dto).Elem()
 	for i := 0; i < ct.NumField(); i++ {
@@ -257,13 +277,13 @@ func ParseDefinition(dto interface{}) *DefinitionObject {
 		}
 
 		field := ct.Type().Field(i)
-		validator := field.Tag.Get("validate")
-		isRequired := slices.IndexFunc(strings.Split(validator, ","), func(v string) bool { return v == "required" })
-		if isRequired == -1 {
-			schema.Required = false
-		} else {
-			schema.Required = true
-		}
+		// validator := field.Tag.Get("validate")
+		// isRequired := slices.IndexFunc(strings.Split(validator, ","), func(v string) bool { return v == "required" })
+		// if isRequired == -1 {
+		// 	schema.Required = false
+		// } else {
+		// 	schema.Required = true
+		// }
 		example := field.Tag.Get("example")
 		if example != "" {
 			schema.Example = example
@@ -272,7 +292,7 @@ func ParseDefinition(dto interface{}) *DefinitionObject {
 		properties[ct.Type().Field(i).Name] = schema
 	}
 
-	return &DefinitionObject{
+	return &SchemasObject{
 		Type:       "object",
 		Properties: properties,
 	}
@@ -303,8 +323,11 @@ func ScanQuery(val interface{}, in core.InDto) []*ParameterObject {
 		}
 		param := &ParameterObject{
 			Name: name,
-			Type: mappingType(ct.Field(i)),
-			In:   string(in),
+			// Type: mappingType(ct.Field(i)),
+			Schema: &SchemaObject{
+				Type: mappingType(ct.Field(i)),
+			},
+			In: string(in),
 		}
 		validator := field.Tag.Get("validate")
 		isRequired := slices.IndexFunc(strings.Split(validator, ","), func(v string) bool { return v == "required" })
