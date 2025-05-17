@@ -145,3 +145,7 @@ type SpecBuilder struct {
 	Paths      PathObject       `json:"paths"`
 	Components *ComponentObject `json:"components,omitempty"`
 }
+
+type Config struct {
+	PersistAuthorization bool
+}
