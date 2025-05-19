@@ -85,7 +85,7 @@ func (spec *SpecBuilder) Build() *SpecBuilder {
 // For example, if you call SetUp("/swagger", app, spec), you can access
 // the swagger UI at http://localhost:8080/swagger/doc.json and the
 // swagger API endpoint at http://localhost:8080/swagger/doc.json.
-func SetUp(path string, app *core.App, spec *SpecBuilder) {
+func SetUp(path string, app *core.App, spec *SpecBuilder, configs ...Config) {
 	spec.ParsePaths(app)
 	jsonBytes, _ := json.Marshal(spec)
 
@@ -110,8 +110,14 @@ func SetUp(path string, app *core.App, spec *SpecBuilder) {
 	route := fmt.Sprintf("%s%s", core.IfSlashPrefixString(app.Prefix), core.IfSlashPrefixString(path))
 	// Serve Swagger UI HTML from CDN
 	app.Mux.Handle(route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html")
-		w.Write([]byte(`
+		var persistAuth string
+		if len(configs) > 0 {
+			config := configs[0]
+			if config.PersistAuthorization {
+				persistAuth += "persistAuthorization: true,\n"
+			}
+		}
+		htmlParser := fmt.Sprintf(`
         <!DOCTYPE html>
         <html lang="en">
         <head>
@@ -134,11 +140,14 @@ func SetUp(path string, app *core.App, spec *SpecBuilder) {
                         SwaggerUIBundle.presets.apis,
                         SwaggerUIBundle.SwaggerUIStandalonePreset
                     ],
-                    layout: "BaseLayout"
+                    layout: "BaseLayout",
+					%s
                 });
             </script>
         </body>
         </html>
-        `))
+        `, persistAuth)
+		w.Header().Set("Content-Type", "text/html")
+		w.Write([]byte(htmlParser))
 	}))
 }
