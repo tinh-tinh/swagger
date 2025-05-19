@@ -159,6 +159,8 @@ func (spec *SpecBuilder) ParsePaths(app *core.App) {
 			itemObject.Post = operation
 		case "PUT":
 			itemObject.Put = operation
+		case "PATCH":
+			itemObject.Patch = operation
 		case "DELETE":
 			itemObject.Delete = operation
 		}

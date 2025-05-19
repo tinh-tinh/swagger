@@ -30,6 +30,7 @@ type PathItemObject struct {
 	Post   *OperationObject `json:"post,omitempty"`
 	Get    *OperationObject `json:"get,omitempty"`
 	Put    *OperationObject `json:"put,omitempty"`
+	Patch  *OperationObject `json:"patch,omitempty"`
 	Delete *OperationObject `json:"delete,omitempty"`
 }
 
