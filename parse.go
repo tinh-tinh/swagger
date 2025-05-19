@@ -188,6 +188,11 @@ func ParseSchema(dto any) *SchemaObject {
 			fieldName = strings.ToLower(fieldType.Name)
 		}
 
+		hiddenField := fieldType.Tag.Get("hidden")
+		if hiddenField != "" {
+			continue
+		}
+
 		// Skip unexported fields
 		if !field.CanSet() || !field.CanInterface() {
 			continue

@@ -47,8 +47,9 @@ func Test_ScanQuery(t *testing.T) {
 
 func Test_ParseDefinition(t *testing.T) {
 	type User struct {
-		Name string `validate:"required" example:"abc"`
-		Age  int    `example:"12"`
+		Name   string `validate:"required" example:"abc"`
+		Age    int    `example:"12"`
+		Hidden int    `hidden:"true"`
 	}
 	dto := &User{}
 	defintion := ParseSchema(dto)
@@ -65,4 +66,5 @@ func Test_ParseDefinition(t *testing.T) {
 	asrt.NotNil(defintion.Properties["age"])
 	asrt.Equal("integer", defintion.Properties["age"].Type)
 	asrt.Equal("12", defintion.Properties["age"].Example)
+	asrt.Nil(defintion.Properties["hidden"])
 }
