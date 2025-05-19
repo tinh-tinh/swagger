@@ -30,3 +30,26 @@ func Test_Tag(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 }
+
+func Test_Persistent(t *testing.T) {
+	server := core.CreateFactory(AppModule)
+	server.SetGlobalPrefix("api")
+
+	document := swagger.NewSpecBuilder()
+	document.AddSecurity(&swagger.SecuritySchemeObject{
+		Type: "apiKey",
+		In:   "header",
+		Name: "Authorization",
+	})
+
+	swagger.SetUp("/swagger", server, document, swagger.Config{
+		PersistAuthorization: true,
+	})
+	testServer := httptest.NewServer(server.PrepareBeforeListen())
+	defer testServer.Close()
+
+	testClient := testServer.Client()
+	resp, err := testClient.Get(testServer.URL + "/api/swagger")
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+}

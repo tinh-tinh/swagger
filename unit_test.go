@@ -112,6 +112,10 @@ func postController(module core.Module) core.Controller {
 		return ctx.JSON(core.Map{"data": "ok"})
 	})
 
+	ctrl.Pipe(core.Param(Param{})).Patch("{id}", func(ctx core.Ctx) error {
+		return ctx.JSON(core.Map{"data": "ok"})
+	})
+
 	ctrl.Pipe(core.Param(Param{}), core.Body(Post{})).Put("{id}", func(ctx core.Ctx) error {
 		return ctx.JSON(core.Map{"data": "ok"})
 	})
