@@ -7,7 +7,7 @@ toolchain go1.24.1
 require (
 	github.com/getkin/kin-openapi v0.132.0
 	github.com/stretchr/testify v1.10.0
-	github.com/tinh-tinh/tinhtinh/v2 v2.1.0
+	github.com/tinh-tinh/tinhtinh/v2 v2.3.0
 )
 
 require (

@@ -41,7 +41,7 @@ func authController(module core.Module) core.Controller {
 	authCtrl := module.NewController("Auth").Metadata(swagger.ApiTag("Auth")).Registry()
 
 	authCtrl.Pipe(
-		core.Body(SignUpUser{}),
+		core.BodyParser[SignUpUser]{},
 	).Post("", func(ctx core.Ctx) error {
 		payload := ctx.Body().(*SignUpUser)
 
@@ -60,13 +60,13 @@ func managerController(module core.Module) core.Controller {
 	).Registry()
 
 	ctrl.Pipe(
-		core.Query(FindUser{}),
+		core.QueryParser[FindUser]{},
 	).Get("", func(ctx core.Ctx) error {
 		return ctx.JSON(core.Map{"data": "ok"})
 	})
 
 	ctrl.Pipe(
-		core.Body(SignUpUser{}),
+		core.BodyParser[SignUpUser]{},
 	).Post("", func(ctx core.Ctx) error {
 		return ctx.JSON(core.Map{"data": "ok"})
 	})
@@ -108,19 +108,19 @@ func postController(module core.Module) core.Controller {
 		return ctx.JSON(core.Map{"data": "ok"})
 	})
 
-	ctrl.Metadata(swagger.ApiOkResponse(&Response{})).Pipe(core.Param(Param{})).Get("{id}", func(ctx core.Ctx) error {
+	ctrl.Metadata(swagger.ApiOkResponse(&Response{})).Pipe(core.PathParser[Param]{}).Get("{id}", func(ctx core.Ctx) error {
 		return ctx.JSON(core.Map{"data": "ok"})
 	})
 
-	ctrl.Pipe(core.Param(Param{})).Patch("{id}", func(ctx core.Ctx) error {
+	ctrl.Pipe(core.PathParser[Param]{}).Patch("{id}", func(ctx core.Ctx) error {
 		return ctx.JSON(core.Map{"data": "ok"})
 	})
 
-	ctrl.Pipe(core.Param(Param{}), core.Body(Post{})).Put("{id}", func(ctx core.Ctx) error {
+	ctrl.Pipe(core.PathParser[Param]{}, core.BodyParser[Post]{}).Put("{id}", func(ctx core.Ctx) error {
 		return ctx.JSON(core.Map{"data": "ok"})
 	})
 
-	ctrl.Pipe(core.Param(Param{})).Delete("{id}", func(ctx core.Ctx) error {
+	ctrl.Pipe(core.PathParser[Param]{}).Delete("{id}", func(ctx core.Ctx) error {
 		return ctx.JSON(core.Map{"data": "ok"})
 	})
 

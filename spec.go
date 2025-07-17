@@ -148,6 +148,8 @@ func SetUp(path string, app *core.App, spec *SpecBuilder, configs ...Config) {
         </html>
         `, persistAuth)
 		w.Header().Set("Content-Type", "text/html")
-		w.Write([]byte(htmlParser))
+		if _, err := w.Write([]byte(htmlParser)); err != nil {
+			fmt.Println(err)
+		}
 	}))
 }
