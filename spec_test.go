@@ -97,5 +97,4 @@ func Test_Spec(t *testing.T) {
 	assert.Equal(t, "id", paths["/api/posts/{id}"].Get.Parameters[0].Name)
 	assert.Equal(t, "path", paths["/api/posts/{id}"].Get.Parameters[0].In)
 	assert.Equal(t, "#/components/schemas/Response", paths["/api/posts/{id}"].Get.Responses["200"].Schema.Ref)
-
 }

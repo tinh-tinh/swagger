@@ -270,7 +270,7 @@ func ParseSchema(dto any) *SchemaObject {
 // - If the field is a primitive type, its value is used as is.
 //
 // The function returns a slice of ParameterObject or nil if the input is nil.
-func ScanQuery(val interface{}, in core.InDto) []*ParameterObject {
+func ScanQuery(val interface{}, in core.CtxKey) []*ParameterObject {
 	ct := reflect.ValueOf(val).Elem()
 
 	params := []*ParameterObject{}
