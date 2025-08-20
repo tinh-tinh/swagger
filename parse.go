@@ -185,7 +185,11 @@ func ParseSchema(dto any) *SchemaObject {
 	for i := 0; i < v.NumField(); i++ {
 		field := v.Field(i)
 		fieldType := v.Type().Field(i)
-		fieldName := fieldType.Tag.Get("json")
+		fieldJsons := fieldType.Tag.Get("json")
+		fieldName := ""
+		if fieldJsons != "" {
+			fieldName = strings.Split(fieldJsons, ",")[0]
+		}
 		if fieldName == "" {
 			fieldName = strings.ToLower(fieldType.Name)
 		}

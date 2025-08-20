@@ -47,8 +47,8 @@ func Test_ScanQuery(t *testing.T) {
 
 func Test_ParseDefinition(t *testing.T) {
 	type User struct {
-		Name   string `validate:"required" example:"abc"`
-		Age    int    `example:"12"`
+		Name   string `json:"name,omitempty" validate:"required" example:"abc"`
+		Age    int    `json:"age,omitempty" example:"12"`
 		Hidden int    `hidden:"true"`
 	}
 	dto := &User{}
