@@ -95,10 +95,11 @@ type ResponseObject struct {
 }
 
 type ItemsObject struct {
-	Type     string   `json:"type,omitempty"`
-	Format   string   `json:"format,omitempty"`
-	Required string   `json:"required,omitempty"` // consider using bool or []string?
-	Enum     []string `json:"enum,omitempty"`
+	Type       string                   `json:"type,omitempty"`
+	Format     string                   `json:"format,omitempty"`
+	Required   []string                 `json:"required,omitempty"`
+	Enum       []string                 `json:"enum,omitempty"`
+	Properties map[string]*SchemaObject `json:"properties,omitempty"`
 }
 
 // -------- Security Scheme Object --------

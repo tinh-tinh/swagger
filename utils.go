@@ -47,7 +47,7 @@ func mappingType(val reflect.Type) string {
 		return "number"
 	case reflect.String:
 		return "string"
-	case reflect.Pointer:
+	case reflect.Pointer, reflect.Struct:
 		return "object"
 	case reflect.Slice, reflect.Array:
 		return "array"
