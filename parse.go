@@ -173,88 +173,83 @@ func (spec *SpecBuilder) ParsePaths(app *core.App) {
 
 type Mapper map[string]interface{}
 
+// ParseSchema recursively parses a struct into a SchemaObject definition.
 func ParseSchema(dto any) *SchemaObject {
-	properties := make(map[string]*SchemaObject)
-	requiredFields := []string{}
-
-	v := reflect.ValueOf(dto)
-	if v.Kind() == reflect.Ptr && !v.IsNil() {
-		v = v.Elem()
+	if dto == nil {
+		return nil
 	}
 
-	for i := 0; i < v.NumField(); i++ {
-		field := v.Field(i)
-		fieldType := v.Type().Field(i)
-		fieldJsons := fieldType.Tag.Get("json")
-		fieldName := ""
-		if fieldJsons != "" {
-			fieldName = strings.Split(fieldJsons, ",")[0]
-		}
-		if fieldName == "" {
-			fieldName = strings.ToLower(fieldType.Name)
-		}
+	v := reflect.ValueOf(dto)
+	t := reflect.TypeOf(dto)
 
-		hiddenField := fieldType.Tag.Get("hidden")
-		if hiddenField != "" {
+	// Dereference pointers
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+		t = t.Elem()
+	}
+
+	// Only handle structs
+	if v.Kind() != reflect.Struct {
+		return &SchemaObject{Type: mappingType(t)}
+	}
+
+	properties := make(map[string]*SchemaObject)
+	var requiredFields []string
+
+	for i := 0; i < t.NumField(); i++ {
+		fieldType := t.Field(i)
+		fieldValue := v.Field(i)
+
+		// Skip unexported fields
+		if fieldType.PkgPath != "" {
 			continue
 		}
 
-		// Skip unexported fields
-		if !field.CanSet() || !field.CanInterface() {
+		// Skip hidden fields
+		if fieldType.Tag.Get("hidden") != "" {
+			continue
+		}
+
+		// Determine JSON name
+		jsonTag := fieldType.Tag.Get("json")
+		fieldName := parseJSONName(jsonTag, fieldType.Name)
+		if fieldName == "" {
 			continue
 		}
 
 		schema := &SchemaObject{
-			Type: mappingType(field.Type()),
+			Type: mappingType(fieldType.Type),
 		}
 
-		if reflect.TypeOf(field.Interface()) == reflect.TypeOf(time.Time{}) {
+		// Handle time.Time format
+		if isTimeType(fieldType.Type) {
 			schema.Format = "date-time"
 		}
 
-		// Parse validation tag
-		validator := fieldType.Tag.Get("validate")
-		requiredIdx := slices.IndexFunc(strings.Split(validator, ","), func(v string) bool {
-			return v == "required"
-		})
-		if requiredIdx != -1 {
+		// Parse validation tags
+		validations := strings.Split(fieldType.Tag.Get("validate"), ",")
+		if slices.Contains(validations, "required") {
 			requiredFields = append(requiredFields, fieldName)
 		}
 
-		if schema.Type == "array" {
-			elemType := field.Type().Elem()
-			schema.Items = &ItemsObject{
-				Type: mappingType(elemType),
+		// Parse example
+		if example := fieldType.Tag.Get("example"); example != "" {
+			if schema.Type == "array" {
+				schema.Example = strings.Split(example, ",")
+			} else {
+				schema.Example = example
 			}
 		}
 
-		nestedIdx := slices.IndexFunc(strings.Split(validator, ","), func(v string) bool {
-			return v == "nested"
-		})
-		if nestedIdx != -1 {
-			if field.Kind() == reflect.Ptr && field.IsNil() {
-				// Create a new instance of the pointed-to struct
-				newValue := reflect.New(field.Type().Elem())
-				field.Set(newValue) // Set the new instance to the field
-				if schema.Properties == nil {
-					schema.Properties = make(map[string]*SchemaObject)
-				}
-				result := ParseSchema(field.Interface())
-				properties[fieldName] = result
-			}
-		} else {
-			// Parse example tag
-			example := fieldType.Tag.Get("example")
-			if example != "" {
-				if schema.Type == "array" {
-					schema.Example = strings.Split(example, ",")
-				} else {
-					schema.Example = example
-				}
-			}
-
-			properties[fieldName] = schema
+		// Handle nested fields
+		if slices.Contains(validations, "nested") {
+			schema = parseNested(fieldValue, fieldType.Type)
+		} else if schema.Type == "array" {
+			elemType := fieldType.Type.Elem()
+			schema.Items = &ItemsObject{Type: mappingType(elemType)}
 		}
+
+		properties[fieldName] = schema
 	}
 
 	return &SchemaObject{
@@ -262,6 +257,72 @@ func ParseSchema(dto any) *SchemaObject {
 		Properties: properties,
 		Required:   requiredFields,
 	}
+}
+
+// --- helpers ---
+
+func parseJSONName(tag, fallback string) string {
+	if tag == "-" {
+		return ""
+	}
+	if tag == "" {
+		return strings.ToLower(fallback)
+	}
+	return strings.Split(tag, ",")[0]
+}
+
+func isTimeType(t reflect.Type) bool {
+	return t == reflect.TypeOf(time.Time{})
+}
+
+func parseNested(v reflect.Value, t reflect.Type) *SchemaObject {
+	// Handle pointer or slice types
+	switch t.Kind() {
+	case reflect.Ptr:
+		if t.Elem().Kind() == reflect.Struct {
+			return ParseSchema(reflect.New(t.Elem()).Interface())
+		}
+	case reflect.Slice, reflect.Array:
+		elemType := t.Elem()
+
+		switch elemType.Kind() {
+		case reflect.Struct:
+			// Array of struct
+			return &SchemaObject{
+				Type: "array",
+				Items: &ItemsObject{
+					Type:       "object",
+					Properties: ParseSchema(reflect.New(elemType).Interface()).Properties,
+				},
+			}
+
+		case reflect.Ptr:
+			// Array of pointer to struct
+			if elemType.Elem().Kind() == reflect.Struct {
+				return &SchemaObject{
+					Type: "array",
+					Items: &ItemsObject{
+						Type:       "object",
+						Properties: ParseSchema(reflect.New(elemType.Elem()).Interface()).Properties,
+					},
+				}
+			}
+			fallthrough
+
+		default:
+			// Array of primitive type (string, int, etc.)
+			return &SchemaObject{
+				Type: "array",
+				Items: &ItemsObject{
+					Type: mappingType(elemType),
+				},
+			}
+		}
+
+	case reflect.Struct:
+		return ParseSchema(reflect.New(t).Interface())
+	}
+	return &SchemaObject{Type: mappingType(t)}
 }
 
 // ScanQuery takes a struct and recursively parses its fields to create a swagger-style mapper.
