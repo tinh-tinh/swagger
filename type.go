@@ -90,8 +90,12 @@ type SchemaObject struct {
 }
 
 type ResponseObject struct {
-	Description string        `json:"description,omitempty"`
-	Schema      *SchemaObject `json:"schema,omitempty"`
+	Description string                    `json:"description,omitempty"`
+	Content     map[string]*ContentObject `json:"content,omitempty"`
+}
+
+type ContentObject struct {
+	Schema *SchemaObject `json:"schema,omitempty"`
 }
 
 type ItemsObject struct {

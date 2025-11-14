@@ -99,8 +99,13 @@ func (spec *SpecBuilder) ParsePaths(app *core.App) {
 			res := route.Metadata[findOkIdx].Value
 			schemas[common.GetStructName(res)] = ParseSchema(res)
 
-			response.Schema = &SchemaObject{
-				Ref: "#/components/schemas/" + common.GetStructName(res),
+			content := &ContentObject{
+				Schema: &SchemaObject{
+					Ref: "#/components/schemas/" + common.GetStructName(res),
+				},
+			}
+			response.Content = map[string]*ContentObject{
+				"application/json": content,
 			}
 		}
 
