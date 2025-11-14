@@ -104,7 +104,7 @@ func postController(module core.Module) core.Controller {
 		return ctx.JSON(core.Map{"data": "ok"})
 	})
 
-	ctrl.Get("", func(ctx core.Ctx) error {
+	ctrl.Metadata(swagger.ApiDescription("Api Get Data"), swagger.ApiSummary("Get data info")).Get("", func(ctx core.Ctx) error {
 		return ctx.JSON(core.Map{"data": "ok"})
 	})
 

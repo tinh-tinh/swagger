@@ -129,6 +129,24 @@ func (spec *SpecBuilder) ParsePaths(app *core.App) {
 			}
 		}
 
+		// Api Description
+		descriptionIndex := slices.IndexFunc(route.Metadata, func(v *core.Metadata) bool { return v.Key == DESCRIPTION })
+		if descriptionIndex != -1 {
+			description, ok := route.Metadata[descriptionIndex].Value.(string)
+			if ok {
+				operation.Description = description
+			}
+		}
+
+		// Api Summary
+		summaryIndex := slices.IndexFunc(route.Metadata, func(v *core.Metadata) bool { return v.Key == SUMMARY })
+		if summaryIndex != -1 {
+			summary, ok := route.Metadata[summaryIndex].Value.(string)
+			if ok {
+				operation.Summary = summary
+			}
+		}
+
 		// Api Security
 		secureIndex := slices.IndexFunc(route.Metadata, func(v *core.Metadata) bool { return v.Key == SECURITY })
 		if secureIndex != -1 {
