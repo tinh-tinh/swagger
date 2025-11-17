@@ -194,7 +194,7 @@ func (spec *SpecBuilder) ParsePaths(app *core.App) {
 	spec.Paths = pathObject
 }
 
-type Mapper map[string]interface{}
+type Mapper map[string]any
 
 // ParseSchema recursively parses a struct into a SchemaObject definition.
 func ParseSchema(dto any) *SchemaObject {
@@ -221,7 +221,6 @@ func ParseSchema(dto any) *SchemaObject {
 
 	for i := 0; i < t.NumField(); i++ {
 		fieldType := t.Field(i)
-		fieldValue := v.Field(i)
 
 		// Skip unexported fields
 		if fieldType.PkgPath != "" {
@@ -266,7 +265,7 @@ func ParseSchema(dto any) *SchemaObject {
 
 		// Handle nested fields
 		if slices.Contains(validations, "nested") {
-			schema = parseNested(fieldValue, fieldType.Type)
+			schema = parseNested(fieldType.Type)
 		} else if schema.Type == "array" {
 			elemType := fieldType.Type.Elem()
 			schema.Items = &ItemsObject{Type: mappingType(elemType)}
@@ -298,7 +297,7 @@ func isTimeType(t reflect.Type) bool {
 	return t == reflect.TypeOf(time.Time{})
 }
 
-func parseNested(v reflect.Value, t reflect.Type) *SchemaObject {
+func parseNested(t reflect.Type) *SchemaObject {
 	// Handle pointer or slice types
 	switch t.Kind() {
 	case reflect.Ptr:
@@ -358,12 +357,17 @@ func parseNested(v reflect.Value, t reflect.Type) *SchemaObject {
 // - If the field is a primitive type, its value is used as is.
 //
 // The function returns a slice of ParameterObject or nil if the input is nil.
-func ScanQuery(val interface{}, in core.CtxKey) []*ParameterObject {
+func ScanQuery(val any, in core.CtxKey) []*ParameterObject {
 	ct := reflect.ValueOf(val).Elem()
 
 	params := []*ParameterObject{}
 	for i := 0; i < ct.NumField(); i++ {
 		field := ct.Type().Field(i)
+
+		// Skip hidden fields
+		if field.Tag.Get("hidden") != "" {
+			continue
+		}
 
 		name := ""
 		if in == core.InQuery {
