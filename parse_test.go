@@ -12,10 +12,11 @@ import (
 
 func Test_ScanQuery(t *testing.T) {
 	type FilterUser struct {
-		Name   string `query:"name" validate:"required"`
-		Age    int    `query:"age"`
-		Email  string `query:"email"`
-		Search string `query:"search"`
+		Name     string `query:"name" validate:"required"`
+		Age      int    `query:"age"`
+		Email    string `query:"email"`
+		Search   string `query:"search"`
+		TenantId string `hidden:"true"`
 	}
 
 	asrt := assert.New(t)
